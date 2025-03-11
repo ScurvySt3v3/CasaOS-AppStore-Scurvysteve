@@ -153,10 +153,10 @@ x-casaos:
     en_us: Self-hosted travel and location tracking application.
   tagline:
     en_us: Dawarich
-  developer: ""
+  developer: "Freika"
   author: ScurvySt3v3
   icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/dawarich.png
-  thumbnail: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/dawarich.png
+  thumbnail: ""
   title:
     en_us: Dawarich
   category: ScurvySt3v3
