@@ -1,8 +1,8 @@
-name: dawarich
-author: scurvysteve
-description: dawarich app
-icon: "" #Optional, falls du ein Icon hast
-port: 3000
-scheme: http
-tips:
-  - Enjoy dawarich!
+{
+  "id": "dawarich",
+  "version": "latest",
+  "image": "freikin/dawarich",
+  "youtube": "",
+  "docs_link": "",
+  "big_bear_cosmos_youtube": ""
+}

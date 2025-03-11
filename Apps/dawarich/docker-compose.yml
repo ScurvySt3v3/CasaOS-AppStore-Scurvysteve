@@ -1,53 +1,61 @@
-version: "3.8"
+# Configuration for Dawarich setup
+name: dawarich
+
+# Service definitions for the Dawarich application
 services:
+  # Redis service configuration
   dawarich_redis:
-    image: redis:7.0-alpine
     container_name: dawarich_redis
+    image: redis:7.0-alpine
     command: redis-server
+    networks:
+      - dawarich
     volumes:
       - /DATA/AppData/docker/dawarich/dawarich_shared:/data
     restart: always
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
       interval: 10s
       retries: 5
       start_period: 30s
       timeout: 10s
-    networks:
-      - dawarich
 
+  # Database service configuration
   dawarich_db:
+    container_name: dawarich_db
     image: postgis/postgis:14-3.5-alpine
     shm_size: 1G
-    container_name: dawarich_db
     volumes:
       - /DATA/AppData/docker/dawarich/dawarich_db_data:/var/lib/postgresql/data
       - /DATA/AppData/docker/dawarich/dawarich_shared:/var/shared
+    networks:
+      - dawarich
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d dawarich_development"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d dawarich_development" ]
       interval: 10s
       retries: 5
       start_period: 30s
       timeout: 10s
-    networks:
-      - dawarich
 
+  # Main Dawarich application service configuration
   dawarich_app:
-    image: freikin/dawarich:latest
     container_name: dawarich_app
+    image: freikin/dawarich:latest
     volumes:
       - /DATA/AppData/docker/dawarich/dawarich_public:/var/app/public
       - /DATA/AppData/docker/dawarich/dawarich_watched:/var/app/tmp/imports/watched
+    networks:
+      - dawarich
     ports:
       - 3000:3000
     stdin_open: true
     tty: true
     entrypoint: web-entrypoint.sh
-    command: ["bin/rails", "server", "-p", "3000", "-b", "::"]
+    command: ['bin/rails', 'server', '-p', '3000', '-b', '::']
     restart: on-failure
     environment:
       RAILS_ENV: development
@@ -61,17 +69,17 @@ services:
       TIME_ZONE: Europe/London
       APPLICATION_PROTOCOL: http
       DISTANCE_UNIT: km
-      PROMETHEUS_EXPORTER_ENABLED: "false"
+      PROMETHEUS_EXPORTER_ENABLED: false
       PROMETHEUS_EXPORTER_HOST: 0.0.0.0
       PROMETHEUS_EXPORTER_PORT: 9394
-      ENABLE_TELEMETRY: "false"
+      ENABLE_TELEMETRY: false
     logging:
       driver: "json-file"
       options:
         max-size: "100m"
         max-file: "5"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:3000/api/v1/health | grep -q '\"status\"\\s*:\\s*\"ok\"'"]
+      test: [ "CMD-SHELL", "wget -qO - http://127.0.0.1:3000/api/v1/health | grep -q '\"status\"\\s*:\\s*\"ok\"'" ]
       interval: 10s
       retries: 30
       start_period: 30s
@@ -81,24 +89,20 @@ services:
         condition: service_healthy
       dawarich_redis:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: "0.50"
-          memory: "4G"
-    networks:
-      - dawarich
 
+  # Sidekiq service configuration
   dawarich_sidekiq:
-    image: freikin/dawarich:latest
     container_name: dawarich_sidekiq
+    image: freikin/dawarich:latest
     volumes:
       - /DATA/AppData/docker/dawarich/dawarich_public:/var/app/public
       - /DATA/AppData/docker/dawarich/dawarich_watched:/var/app/tmp/imports/watched
+    networks:
+      - dawarich
     stdin_open: true
     tty: true
     entrypoint: sidekiq-entrypoint.sh
-    command: ["sidekiq"]
+    command: ['sidekiq']
     restart: on-failure
     environment:
       RAILS_ENV: development
@@ -111,17 +115,17 @@ services:
       BACKGROUND_PROCESSING_CONCURRENCY: 10
       APPLICATION_PROTOCOL: http
       DISTANCE_UNIT: km
-      PROMETHEUS_EXPORTER_ENABLED: "false"
+      PROMETHEUS_EXPORTER_ENABLED: false
       PROMETHEUS_EXPORTER_HOST: dawarich_app
       PROMETHEUS_EXPORTER_PORT: 9394
-      ENABLE_TELEMETRY: "false"
+      ENABLE_TELEMETRY: false
     logging:
       driver: "json-file"
       options:
         max-size: "100m"
         max-file: "5"
     healthcheck:
-      test: ["CMD-SHELL", "bundle exec sidekiqmon processes | grep $${HOSTNAME}"]
+      test: [ "CMD-SHELL", "bundle exec sidekiqmon processes | grep $${HOSTNAME}" ]
       interval: 10s
       retries: 30
       start_period: 30s
@@ -133,13 +137,27 @@ services:
         condition: service_healthy
       dawarich_app:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: "0.50"
-          memory: "4G"
-    networks:
-      - dawarich
 
+# Network configuration
 networks:
   dawarich:
+    driver: bridge
+
+# CasaOS specific configuration
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: dawarich_app
+  description:
+    en_us: Self-hosted travel and location tracking application.
+  tagline:
+    en_us: Dawarich
+  developer: ""
+  author: ScurvySt3v3
+  icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/dawarich.png
+  thumbnail: ""
+  title:
+    en_us: Dawarich
+  category: ScurvySt3v3
+  port_map: "3000"
