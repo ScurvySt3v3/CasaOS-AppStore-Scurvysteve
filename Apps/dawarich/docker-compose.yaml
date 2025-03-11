@@ -1,12 +1,9 @@
-# Configuration for Dawarich setup
 name: dawarich
 
-# Service definitions for the Dawarich application
 services:
-  # Redis service configuration
   dawarich_redis:
-    container_name: dawarich_redis
     image: redis:7.0-alpine
+    container_name: dawarich_redis
     command: redis-server
     networks:
       - dawarich
@@ -20,11 +17,10 @@ services:
       start_period: 30s
       timeout: 10s
 
-  # Database service configuration
   dawarich_db:
-    container_name: dawarich_db
     image: postgis/postgis:14-3.5-alpine
     shm_size: 1G
+    container_name: dawarich_db
     volumes:
       - /DATA/AppData/docker/dawarich/dawarich_db_data:/var/lib/postgresql/data
       - /DATA/AppData/docker/dawarich/dawarich_shared:/var/shared
@@ -41,17 +37,16 @@ services:
       start_period: 30s
       timeout: 10s
 
-  # Main Dawarich application service configuration
   dawarich_app:
-    container_name: dawarich_app
     image: freikin/dawarich:latest
+    container_name: dawarich_app
     volumes:
       - /DATA/AppData/docker/dawarich/dawarich_public:/var/app/public
       - /DATA/AppData/docker/dawarich/dawarich_watched:/var/app/tmp/imports/watched
     networks:
       - dawarich
     ports:
-      - 3000:3000
+      - '3000:3000'
     stdin_open: true
     tty: true
     entrypoint: web-entrypoint.sh
@@ -89,11 +84,15 @@ services:
         condition: service_healthy
       dawarich_redis:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: '4G'
 
-  # Sidekiq service configuration
   dawarich_sidekiq:
-    container_name: dawarich_sidekiq
     image: freikin/dawarich:latest
+    container_name: dawarich_sidekiq
     volumes:
       - /DATA/AppData/docker/dawarich/dawarich_public:/var/app/public
       - /DATA/AppData/docker/dawarich/dawarich_watched:/var/app/tmp/imports/watched
@@ -137,27 +136,73 @@ services:
         condition: service_healthy
       dawarich_app:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: '4G'
 
-# Network configuration
 networks:
   dawarich:
-    driver: bridge
+    name: dawarich
 
-# CasaOS specific configuration
 x-casaos:
   architectures:
     - amd64
     - arm64
   main: dawarich_app
+  store_app_id: dawarich
+  category: Gallery
+  author: Cp0204
+  developer: freikin
+  icon: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Dawarich/icon.png
+  screenshot_link:
+    - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Dawarich/screenshot-1.png
+    - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Dawarich/screenshot-2.png
+    - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Dawarich/screenshot-3.png
+  thumbnail: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Dawarich/thumbnail.png
   description:
-    en_us: Self-hosted travel and location tracking application.
+    en_us: |
+      ## Dawarich: Your Personal Media Management Solution
+
+      Dawarich is a self-hosted media management platform that allows you to organize, share, and access your photos and videos seamlessly. With features like automatic backups, advanced search, and multi-user support, Dawarich offers a modern and efficient way to manage your media files.
+
+      Deploying Dawarich on CasaOS brings the convenience of unlimited storage, fast local network speeds, and easy access from multiple devices. Your media is always secure and accessible, right from your home.
+    zh_cn: |
+      ## Dawarich：您的个人媒体管理解决方案
+
+      Dawarich 是一个自托管的媒体管理平台，允许您无缝组织、共享和访问您的照片和视频。凭借自动备份、高级搜索和多用户支持等功能，Dawarich 提供了一种现代而高效的方式来管理您的媒体文件。
+
+      在 CasaOS 上部署 Dawarich 带来了无限存储、快速本地网络速度和从多设备轻松访问的便利。您的媒体始终安全且可访问，就在您的家中。
   tagline:
-    en_us: Dawarich
-  developer: "Freika"
-  author: ScurvySt3v3
-  icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/dawarich.png
-  thumbnail: ""
+    en_us: Self-hosted media management solution
+    zh_cn: 自托管媒体管理解决方案
   title:
     en_us: Dawarich
-  category: ScurvySt3v3
+  tips:
+    before_install:
+      en_us: |
+        ⚠️ The project is under active development.
+        ⚠️ Expect bugs and breaking changes.
+        ⚠️ Do not use the app as the only way to store your photos and videos.
+        ⚠️ Always follow the 3-2-1 backup plan for your precious photos and videos!
+
+        ## Authorized Media Files and Data
+        1. Click on the settings icon in the upper right corner of the App.
+        2. In the dawarich_app tab, map your media storage location in the Volumes section.
+
+        For complete project documentation and installation instructions, please [refer to](https://dawarich.app).
+      zh_cn: |
+        ⚠️ 本项目正在活跃开发中。
+        ⚠️ 可能存在 bug 或者随时有重大变更。
+        ⚠️ 不要把本软件作为您存储照片或视频的唯一方式。
+        ⚠️ 为了您宝贵的照片与视频，请始终遵守 3-2-1 备份方案！
+
+        ## 授权媒体文件和数据
+        1. 点击 App 图标右上角的设置
+        2. 在 dawarich_app 选项卡 Volumes 栏目中映射您的媒体储存位置。
+
+        完整的项目文档以及安装教程请[参见](https://dawarich.app)。
   port_map: "3000"
+  scheme: http
+  index: /
